@@ -1,10 +1,12 @@
 import asyncio
 import logging.config
+import sys
 import time
 
 import requests
 
 from config_data.config import LOGGING_CONFIG, config
+from database.db import init_models, engine
 from database.db_func import add_new_transactions, clean, \
     get_last_hour_transaction
 from services.func import get_df_from_html, get_top100_tokens, \
@@ -14,7 +16,8 @@ logging.config.dictConfig(LOGGING_CONFIG)
 logger = logging.getLogger('my_logger')
 err_log = logging.getLogger('errors_logger')
 
-async def parsing_transactions():
+
+async def main():
     """
     Циклический парсинг новых транзакций и добавление в базу.
     :return: None
@@ -68,7 +71,7 @@ async def db_cleaner():
     """
     while True:
         logger.info('Очистка базы')
-        clean_result = await clean(70)
+        clean_result = await clean(1)
         if clean_result:
             logger.info('База почищена')
         else:
@@ -96,7 +99,13 @@ async def every_hour_report():
 
 
 if __name__ == '__main__':
+    if sys.version_info[:2] == (3, 7):
+        asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(init_models(engine))
+    loop.close()
     try:
-        asyncio.run(parsing_transactions())
+        asyncio.run(main())
     except (KeyboardInterrupt, SystemExit):
         logger.info('Скрипт остановлен принудительно')
+

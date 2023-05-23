@@ -2,13 +2,12 @@ import asyncio
 import datetime
 import logging.config
 import re
-import time
 
-from sqlalchemy import select, delete, func, and_
+from sqlalchemy import select, delete, func
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import async_sessionmaker, AsyncSession
 
-from config_data.config import config, LOGGING_CONFIG
+from config_data.config import LOGGING_CONFIG
 from database.db import Transaction, engine
 
 
@@ -81,7 +80,7 @@ async def get_last_hour_transaction(lower_target) -> list[(str, int)]:
         return result
 
 
-async def clean(minutes=70):
+async def clean(minutes=60):
     """
     Удаляет все Transaction старее minutes назад
     :param minutes: период в минутах
@@ -91,19 +90,15 @@ async def clean(minutes=70):
         delta = datetime.timedelta(minutes=minutes)
         async_session: async_sessionmaker[AsyncSession] = async_sessionmaker(
             engine, expire_on_commit=False)
-        start = time.perf_counter()
         async with async_session() as session:
             query = delete(Transaction).where(Transaction.addet_time < (
                     datetime.datetime.now() - delta))
             await session.execute(query)
             await session.commit()
-        print(time.perf_counter() - start)
         return True
     except Exception as err:
         err_log.error('Ошибка при удалении из базы')
-
-
-
+        print(err)
 
 
 async def main():
@@ -120,6 +115,8 @@ async def main():
     # print(a)
     # print(len(a))
     # break
+    b = await clean(1)
+    print(b)
 
 if __name__ == '__main__':
     asyncio.run(main())
