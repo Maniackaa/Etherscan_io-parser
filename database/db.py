@@ -33,17 +33,20 @@ class Transaction(Base):
     def __repr__(self):
         return f'{self.id} {self.token_name} {self.addet_time}'
 
-# class Token(Base):
-#     __tablename__ = 'token_adress'
-#     id: Mapped[int] = mapped_column(primary_key=True,
-#                                     autoincrement=True,
-#                                     comment='Первичный ключ')
-#     token_name: Mapped[str] = mapped_column(String(50))
-#     token_adress: Mapped[str] = mapped_column(String(100))
-#
-#     def __repr__(self):
-#         return f'{self.id}. {self.token_name}: {self.token_adress}'
 
+class BotSettings(Base):
+    __tablename__ = 'bot_settings'
+    id: Mapped[int] = mapped_column(primary_key=True,
+                                    autoincrement=True,
+                                    comment='Первичный ключ')
+    name: Mapped[str] = mapped_column(String(50))
+    value: Mapped[str] = mapped_column(String(50), nullable=True, default='')
+    description: Mapped[str] = mapped_column(String(255),
+                                             nullable=True,
+                                             default='')
+
+    def __repr__(self):
+        return f'{self.id}. {self.name}: {self.value}'
 
 async def init_models(engine):
     async with engine.begin() as conn:

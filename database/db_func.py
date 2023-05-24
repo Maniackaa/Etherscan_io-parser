@@ -9,8 +9,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import async_sessionmaker, AsyncSession
 
 from config_data.config import LOGGING_CONFIG
-from database.db import Transaction, engine
-
+from database.db import Transaction, engine, BotSettings
 
 logging.config.dictConfig(LOGGING_CONFIG)
 logger = logging.getLogger('my_logger')
@@ -67,7 +66,7 @@ async def add_new_transactions(data: list, token_adress: dict):
 async def get_last_hour_transaction(lower_target) -> list[(str, int)]:
     """
     Возвращает сгруппированный список транзакций за последний час,
-     количетсво которых больше порога.
+     количество которых больше порога.
     :param lower_target: нижний порог количества
     :return: list[tuple[str, int]]
     [('WETH', 559, '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2'),]
@@ -107,25 +106,34 @@ async def clean(minutes=60):
         print(err)
 
 
+async def read_bot_settings(name: str) -> str:
+    async_session: async_sessionmaker[AsyncSession] = async_sessionmaker(
+        engine, expire_on_commit=False)
+    async with async_session() as session:
+        q = select(BotSettings).where(BotSettings.name == name).limit(1)
+        result = await session.execute(q)
+        readed_setting: BotSettings = result.scalars().one_or_none()
+    return readed_setting.value
+
+
+async def set_botsettings_value(name, value):
+    try:
+        async_session = async_sessionmaker(engine)
+        async with async_session() as session:
+            query = select(BotSettings).where(BotSettings.name == name).limit(1)
+            result = await session.execute(query)
+            setting: BotSettings = result.scalar()
+            if setting:
+                setting.value = value
+            await session.commit()
+    except Exception as err:
+        err_log.error(f'Ошибка set_botsettings_value. name: {name}, value: {value}')
+        raise err
+
+
 async def main():
     pass
-
-    # y = await add_new_transactions(
-    #     [
-    #         ['0x2ec253bc9c3a145b56cb7a20fa6b405759c58f16045abbc27e1737a775d46ed6', 'HEX (HEX)'],
-    #         ['0xf976b8b51421e58bb4217de8b2f82d91790e404168043c4d4a1b5827bd53c7d9', 'Wrapped Ethe... (WETH)']
-    #     ]
-    # )
-    # print(y)
-    # a = await get_last_hour_transaction(10)
-    # print(a)
-    # print(len(a))
-    # break
-    # b = await clean(1)
-    # print(b)
 
 
 if __name__ == '__main__':
     asyncio.run(main())
-# report()
-# add_new_tweets([('2023-05-19 15:29:55', 'Binance Liquidated Long on BTCUSDT @ $26,728: Sell $246,722')])

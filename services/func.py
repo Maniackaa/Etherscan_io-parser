@@ -70,6 +70,9 @@ def format_top_message(tokens: list[tuple]) -> str:
 
 def send_message_tg(message: str, chat_id: str):
     """Отправка сообщения через чат-бот телеграмма"""
+    print('Отправка сообщения')
+    message = message[:2500]
+    print(message)
     bot_token = config.tg_bot.token
     url = (f'https://api.telegram.org/'
            f'bot{bot_token}/'
@@ -100,17 +103,3 @@ def get_adress_from_html(html):
             err_log.debug(f'{token_a or token_adress}', exc_info=True)
             raise err
     return token_adress
-
-
-
-# html = """
-# <a class="d-flex align-items-center gap-1 link-dark" href="/token/0xf475e5dccd918108ec7c1f843c7245904b453318">
-# <img alt="" class="rounded-circle" height="18" src="/images/main/empty-token.png" width="18"/>
-# <div class="d-flex gap-1">
-# <span class="hash-tag text-truncate">ERC-20 TOKEN*</span>
-# </div>
-# <i class="fas fa-triangle-exclamation text-danger" data-bs-title="The token transferred has poor reputation score. Please be careful if you choose to interact with the token." data-bs-toggle="tooltip"></i>
-# </a>"""
-#
-# x = get_adress_from_html(html)
-# print(x)
