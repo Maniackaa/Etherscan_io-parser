@@ -8,11 +8,11 @@ from config_data.config import LOGGING_CONFIG, config
 from database.db_func import (
     add_new_transactions,
     clean,
-    read_bot_settings
+    read_bot_settings, report
 )
 from services.func import (
     get_df_from_html,
-    get_adress_from_html,
+    get_adress_from_html, send_message_tg,
 )
 
 logging.config.dictConfig(LOGGING_CONFIG)
