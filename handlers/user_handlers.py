@@ -1,17 +1,22 @@
 from aiogram import Dispatcher, types, Router, Bot
 from aiogram.filters import Command, CommandStart, Text
 from aiogram.types import CallbackQuery, Message, URLInputFile
-
+import logging.config
 from aiogram.fsm.context import FSMContext
 
+from config_data.config import LOGGING_CONFIG
 from database.db_func import set_botsettings_value, get_last_hour_transaction, \
     report
 
 router: Router = Router()
+logging.config.dictConfig(LOGGING_CONFIG)
+logger = logging.getLogger('my_logger')
+err_log = logging.getLogger('errors_logger')
 
 
 @router.message(Command(commands=["start"]))
 async def process_start_command(message: Message, state: FSMContext):
+    print('start')
     await state.clear()
     text = (f'Привет!\n'
             f'Команды:\n'
@@ -25,6 +30,7 @@ async def process_start_command(message: Message, state: FSMContext):
 
 @router.message(Command(commands=["report"]))
 async def process_start_command(message: Message):
+    print('report')
     text = await report()
     await message.answer(text)
 
