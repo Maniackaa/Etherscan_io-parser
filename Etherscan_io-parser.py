@@ -8,13 +8,10 @@ from config_data.config import LOGGING_CONFIG, config
 from database.db_func import (
     add_new_transactions,
     clean,
-    get_last_hour_transaction, read_bot_settings,
+    read_bot_settings
 )
 from services.func import (
     get_df_from_html,
-    get_top100_tokens,
-    format_top_message,
-    send_message_tg,
     get_adress_from_html,
 )
 
@@ -40,23 +37,35 @@ async def db_cleaner():
         await asyncio.sleep(60 * 5)
 
 
+# async def report():
+#     try:
+#         limit_count = int(await read_bot_settings(
+#             'Etherscanio-parser_lower_limit_count'))
+#         non_popular_tokens = []
+#         top100 = await get_top100_tokens()
+#         stop_token = ['WETH']
+#         all_transactions = await get_last_hour_transaction(
+#             limit_count)  # [('WETH', 4027),]
+#         for token in all_transactions:
+#             if token[0] not in top100 + stop_token:
+#                 non_popular_tokens.append(token)
+#         print(non_popular_tokens)
+#         if non_popular_tokens:
+#             msg = format_top_message(non_popular_tokens)
+#         else:
+#             msg = 'Empty'
+#         return msg
+#     except Exception:
+#         err_log.error('every_hour_report error', exc_info=True)
+
+
 async def every_hour_report():
     while True:
         try:
             delay = int(await read_bot_settings(
                 'Etherscanio-parser_report_time'))
-            limit_count = int(await read_bot_settings(
-                'Etherscanio-parser_lower_limit_count'))
-            non_popular_tokens = []
-            top100 = await get_top100_tokens()
-            stop_token = ['WETH']
-
-            all_transactions = await get_last_hour_transaction(limit_count)  # [('WETH', 4027),]
-            for token in all_transactions:
-                if token[0] not in top100 + stop_token:
-                    non_popular_tokens.append(token)
-            msg = format_top_message(non_popular_tokens)
-            print('Отправка сообщения')
+            msg = await report()
+            logger.info('Отправка сообщения')
             send_message_tg(msg, config.tg_bot.admin_ids[0])
             await asyncio.sleep(60 * delay)
         except Exception:
@@ -69,7 +78,6 @@ async def main():
     Циклический парсинг новых транзакций и добавление в базу.
     :return: None
     """
-
     asyncio.create_task(every_hour_report())
     asyncio.create_task(db_cleaner())
     parsing_transactions_headers = {

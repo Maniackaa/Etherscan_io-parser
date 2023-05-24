@@ -70,9 +70,8 @@ def format_top_message(tokens: list[tuple]) -> str:
 
 def send_message_tg(message: str, chat_id: str):
     """Отправка сообщения через чат-бот телеграмма"""
-    print('Отправка сообщения')
+    print(f'Отправка сообщения {chat_id} {message}')
     message = message[:2500]
-    print(message)
     bot_token = config.tg_bot.token
     url = (f'https://api.telegram.org/'
            f'bot{bot_token}/'

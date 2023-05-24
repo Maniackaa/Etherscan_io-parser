@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import async_sessionmaker, AsyncSession
 
 from config_data.config import LOGGING_CONFIG
 from database.db import Transaction, engine, BotSettings
+from services.func import get_top100_tokens, format_top_message
 
 logging.config.dictConfig(LOGGING_CONFIG)
 logger = logging.getLogger('my_logger')
@@ -129,6 +130,28 @@ async def set_botsettings_value(name, value):
     except Exception as err:
         err_log.error(f'Ошибка set_botsettings_value. name: {name}, value: {value}')
         raise err
+
+
+async def report():
+    try:
+        limit_count = int(await read_bot_settings(
+            'Etherscanio-parser_lower_limit_count'))
+        non_popular_tokens = []
+        top100 = await get_top100_tokens()
+        stop_token = ['WETH']
+        all_transactions = await get_last_hour_transaction(
+            limit_count)  # [('WETH', 4027),]
+        for token in all_transactions:
+            if token[0] not in top100 + stop_token:
+                non_popular_tokens.append(token)
+        print(non_popular_tokens)
+        if non_popular_tokens:
+            msg = format_top_message(non_popular_tokens)
+        else:
+            msg = 'Empty'
+        return msg
+    except Exception:
+        err_log.error('every_hour_report error', exc_info=True)
 
 
 async def main():

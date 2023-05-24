@@ -4,7 +4,8 @@ from aiogram.types import CallbackQuery, Message, URLInputFile
 
 from aiogram.fsm.context import FSMContext
 
-from database.db_func import set_botsettings_value
+from database.db_func import set_botsettings_value, get_last_hour_transaction, \
+    report
 
 router: Router = Router()
 
@@ -20,10 +21,10 @@ async def process_start_command(message: Message, state: FSMContext):
     await message.answer(text)
 
 
-# @router.message(Command(commands=["report"]))
-# async def process_start_command(message: Message):
-#     text = await report()
-#     await message.answer(text)
+@router.message(Command(commands=["report"]))
+async def process_start_command(message: Message):
+    text = await report()
+    await message.answer(text)
 
 
 @router.message(Text(startswith='set:'))
