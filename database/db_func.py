@@ -2,6 +2,7 @@ import asyncio
 import datetime
 import logging.config
 import re
+import time
 
 from sqlalchemy import select, delete, func
 from sqlalchemy.exc import IntegrityError
@@ -16,12 +17,14 @@ logger = logging.getLogger('my_logger')
 err_log = logging.getLogger('errors_logger')
 
 
-async def add_new_transactions(data: list):
+async def add_new_transactions(data: list, token_adress: dict):
     """
     Добавляет новые транзакции в базу
     [['0xf976b8b51421e58bb4217de8b2f82d91790e404168043c4d4a1b5827bd53c7d9'
      'Wrapped Ethe... (WETH)'],]
     """
+    logger.debug(f'add_new_transactions data: {data}\ntoken_adress: {token_adress}')
+    start = time.perf_counter()
     async_session = async_sessionmaker(engine, expire_on_commit=False)
     count = 0
     for row in data:
@@ -49,6 +52,8 @@ async def add_new_transactions(data: list):
                     token = token.group(1)
                 transaction.token = token or 'unknown'
                 transaction.addet_time = datetime.datetime.now()
+                transaction.token_adress = token_adress.get(
+                    transaction.token, 'unknown')
                 session.add(transaction)
                 await session.commit()
                 count += 1
@@ -56,7 +61,7 @@ async def add_new_transactions(data: list):
             except IntegrityError as err:
                 err_log.error(f'Проблема добавления записи {row}')
                 raise err
-    logger.info(f'Добавлено: {count}')
+    logger.info(f'Добавлено: {count} {time.perf_counter() - start}')
 
 
 async def get_last_hour_transaction(lower_target) -> list[(str, int)]:
@@ -65,11 +70,13 @@ async def get_last_hour_transaction(lower_target) -> list[(str, int)]:
      количетсво которых больше порога.
     :param lower_target: нижний порог количества
     :return: list[tuple[str, int]]
+    [('WETH', 559, '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2'),]
     """
     async_session = async_sessionmaker(engine, expire_on_commit=False)
     async with async_session() as session:
         query = select(
-            Transaction.token, func.count(Transaction.token)).group_by(
+            Transaction.token, func.count(
+                Transaction.token), Transaction.token_adress).group_by(
             Transaction.token).order_by(
             func.count(Transaction.token).desc()).where(
             (Transaction.addet_time > datetime.datetime.now()
@@ -91,9 +98,8 @@ async def clean(minutes=60):
         async_session: async_sessionmaker[AsyncSession] = async_sessionmaker(
             engine, expire_on_commit=False)
         async with async_session() as session:
-            query = delete(Transaction).where(Transaction.addet_time < (
-                    datetime.datetime.now() - delta))
-            await session.execute(query)
+            await session.execute(delete(Transaction).where(Transaction.addet_time < (
+                    datetime.datetime.now() - delta)))
             await session.commit()
         return True
     except Exception as err:
@@ -115,8 +121,9 @@ async def main():
     # print(a)
     # print(len(a))
     # break
-    b = await clean(1)
-    print(b)
+    # b = await clean(1)
+    # print(b)
+
 
 if __name__ == '__main__':
     asyncio.run(main())

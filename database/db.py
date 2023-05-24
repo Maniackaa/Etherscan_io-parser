@@ -26,11 +26,23 @@ class Transaction(Base):
     txn_hash: Mapped[str] = mapped_column(String(100))
     token_name: Mapped[str] = mapped_column(String(50))
     token: Mapped[str] = mapped_column(String(20))
+    token_adress: Mapped[str] = mapped_column(String(100))
     addet_time: Mapped[str] = mapped_column(DateTime(), default=str(
         datetime.datetime.now()))
 
     def __repr__(self):
         return f'{self.id} {self.token_name} {self.addet_time}'
+
+# class Token(Base):
+#     __tablename__ = 'token_adress'
+#     id: Mapped[int] = mapped_column(primary_key=True,
+#                                     autoincrement=True,
+#                                     comment='Первичный ключ')
+#     token_name: Mapped[str] = mapped_column(String(50))
+#     token_adress: Mapped[str] = mapped_column(String(100))
+#
+#     def __repr__(self):
+#         return f'{self.id}. {self.token_name}: {self.token_adress}'
 
 
 async def init_models(engine):
