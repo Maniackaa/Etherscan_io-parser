@@ -14,6 +14,8 @@ router: Router = Router()
 async def process_start_command(message: Message, state: FSMContext):
     await state.clear()
     text = (f'Привет!\n'
+            f'Команды:\n'
+            f'/report: отчет.\n\n'
             f'Настройки:\n'
             f'set:limit:50 - изменить порог счетчика.\n'
             f'set:period:50 - изменить период отчета, мин.\n'
