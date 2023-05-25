@@ -62,7 +62,7 @@ async def get_top100_tokens():
 
 
 def format_top_message(tokens: list[tuple]) -> str:
-    msg = ''
+    msg = f'Топ\n'
     for token in tokens:
         msg += f'{token[0]} ({token[1]})\n{token[2]}\n\n'
     return msg

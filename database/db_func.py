@@ -144,7 +144,7 @@ async def report():
         for token in all_transactions:
             if token[0] not in top100 + stop_token:
                 non_popular_tokens.append(token)
-        print(non_popular_tokens)
+        print('non_popular_tokens:', non_popular_tokens)
         if non_popular_tokens:
             msg = format_top_message(non_popular_tokens)
         else:

@@ -1,0 +1,15 @@
+[Unit]
+Description=bot-Etherscan_io-parser
+After=network.target
+
+[Service]
+EnvironmentFile=
+ExecStart=/home/Etherscan_io-parser/venv/bin/python bot-Etherscan_io-parser.py
+ExecReload=/home/Etherscan_io-parser/venv/bin/python bot-Etherscan_io-parser.py
+WorkingDirectory=/home/Etherscan_io-parser
+KillMode=process
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

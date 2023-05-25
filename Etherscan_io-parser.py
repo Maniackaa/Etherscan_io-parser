@@ -62,8 +62,12 @@ async def db_cleaner():
 async def every_hour_report():
     while True:
         try:
-            delay = int(await read_bot_settings(
-                'Etherscanio-parser_report_time'))
+            delay = await read_bot_settings(
+                'Etherscanio-parser_report_time')
+            if delay:
+                delay = int(delay)
+            else:
+                delay = 60
             msg = await report()
             logger.info('Отправка сообщения')
             send_message_tg(msg, config.tg_bot.admin_ids[0])

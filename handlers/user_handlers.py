@@ -1,6 +1,7 @@
 from aiogram import Dispatcher, types, Router, Bot
 from aiogram.filters import Command, CommandStart, Text
-from aiogram.types import CallbackQuery, Message, URLInputFile
+from aiogram.types import CallbackQuery, Message, URLInputFile, KeyboardButton, \
+    ReplyKeyboardMarkup
 import logging.config
 from aiogram.fsm.context import FSMContext
 
@@ -14,6 +15,15 @@ logger = logging.getLogger('my_logger')
 err_log = logging.getLogger('errors_logger')
 
 
+kb = [
+    [KeyboardButton(text="/report")],
+    [KeyboardButton(text="set:limit:")],
+    [KeyboardButton(text="set:period:")]
+    ]
+
+start_kb: ReplyKeyboardMarkup = ReplyKeyboardMarkup(keyboard=kb,
+                                                    resize_keyboard=True)
+
 @router.message(Command(commands=["start"]))
 async def process_start_command(message: Message, state: FSMContext):
     print('start')
@@ -25,14 +35,15 @@ async def process_start_command(message: Message, state: FSMContext):
             f'set:limit:50 - изменить порог счетчика.\n'
             f'set:period:50 - изменить период отчета, мин.\n'
             )
-    await message.answer(text)
+    await message.answer(text, reply_markup=start_kb)
 
 
 @router.message(Command(commands=["report"]))
 async def process_start_command(message: Message):
     print('report')
     text = await report()
-    await message.answer(text)
+    print(text)
+    await message.answer(text[:2500])
 
 
 @router.message(Text(startswith='set:'))
@@ -42,11 +53,11 @@ async def process_start_command(message: Message):
         command = message.text.split(':')
         name = command[1]
         value = command[2]
-        if name == 'limit':
+        if name == 'limit' and value:
             settings_name = 'Etherscanio-parser_lower_limit_count'
             await set_botsettings_value(settings_name, value)
             await message.answer(f'{name}, {value}')
-        elif name == 'period':
+        elif name == 'period' and value:
             settings_name = 'Etherscanio-parser_report_time'
             await set_botsettings_value(settings_name, value)
             await message.answer(f'{name}, {value}')
