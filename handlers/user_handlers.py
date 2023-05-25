@@ -17,8 +17,6 @@ err_log = logging.getLogger('errors_logger')
 
 kb = [
     [KeyboardButton(text="/report")],
-    [KeyboardButton(text="set:limit:")],
-    [KeyboardButton(text="set:period:")]
     ]
 
 start_kb: ReplyKeyboardMarkup = ReplyKeyboardMarkup(keyboard=kb,
