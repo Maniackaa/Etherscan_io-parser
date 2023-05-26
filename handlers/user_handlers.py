@@ -29,7 +29,7 @@ async def process_start_command(message: Message, state: FSMContext):
     text = (f'Привет!\n'
             f'Команды:\n'
             f'/report: отчет.\n'
-            f'settings: показать текущие настройки\n\n'
+            f'/settings: показать текущие настройки\n\n'
             f'Изменить настройки:\n'
             f'set:limit:50 - изменить порог счетчика.\n'
             f'set:period:50 - изменить период отчета, мин.\n'
@@ -69,8 +69,8 @@ async def process_start_command(message: Message):
 @router.message(Command(commands=["settings"]))
 async def process_settings_command(message: Message):
     print('setings')
-    period = read_bot_settings('Etherscanio - parser_report_time')
-    limit = read_bot_settings('Etherscanio - parser_lower_limit_count')
+    period = await read_bot_settings('Etherscanio-parser_report_time')
+    limit = await read_bot_settings('Etherscanio-parser_lower_limit_count')
     text = (f'Текущие настройки:\n\n'
             f'Период отправки отчетов, мин: {period}\n'
             f'Нижний порог счетчика токенов для отчета: {limit}')
