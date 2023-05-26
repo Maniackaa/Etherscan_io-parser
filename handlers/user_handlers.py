@@ -7,7 +7,7 @@ from aiogram.fsm.context import FSMContext
 
 from config_data.config import LOGGING_CONFIG
 from database.db_func import set_botsettings_value, get_last_hour_transaction, \
-    report
+    report, read_bot_settings
 
 router: Router = Router()
 logging.config.dictConfig(LOGGING_CONFIG)
@@ -28,8 +28,9 @@ async def process_start_command(message: Message, state: FSMContext):
     await state.clear()
     text = (f'Привет!\n'
             f'Команды:\n'
-            f'/report: отчет.\n\n'
-            f'Настройки:\n'
+            f'/report: отчет.\n'
+            f'settings: показать текущие настройки\n\n'
+            f'Изменить настройки:\n'
             f'set:limit:50 - изменить порог счетчика.\n'
             f'set:period:50 - изменить период отчета, мин.\n'
             )
@@ -63,3 +64,14 @@ async def process_start_command(message: Message):
             await message.answer(f'Неизвестная команда')
     except IndexError:
         await message.answer(f'Неверный формат команды')
+
+
+@router.message(Command(commands=["settings"]))
+async def process_settings_command(message: Message):
+    print('setings')
+    period = read_bot_settings('Etherscanio - parser_report_time')
+    limit = read_bot_settings('Etherscanio - parser_lower_limit_count')
+    text = (f'Текущие настройки:\n\n'
+            f'Период отправки отчетов, мин: {period}\n'
+            f'Нижний порог счетчика токенов для отчета: {limit}')
+    await message.answer(text[:2500])
