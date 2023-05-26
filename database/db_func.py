@@ -64,11 +64,12 @@ async def add_new_transactions(data: list, token_adress: dict):
     logger.info(f'Добавлено: {count} {time.perf_counter() - start}')
 
 
-async def get_last_hour_transaction(lower_target) -> list[(str, int)]:
+async def get_last_hour_transaction(lower_target, time_period=60) -> list[(str, int)]:
     """
     Возвращает сгруппированный список транзакций за последний час,
      количество которых больше порога.
     :param lower_target: нижний порог количества
+    :param time_period: период  обработки, мин
     :return: list[tuple[str, int]]
     [('WETH', 559, '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2'),]
     """
@@ -80,7 +81,7 @@ async def get_last_hour_transaction(lower_target) -> list[(str, int)]:
             Transaction.token).order_by(
             func.count(Transaction.token).desc()).where(
             (Transaction.addet_time > datetime.datetime.now()
-             - datetime.timedelta(minutes=60))).having(
+             - datetime.timedelta(minutes=time_period))).having(
             func.count(Transaction.token) > lower_target)
         result = await session.execute(query)
         result = result.all()
@@ -139,8 +140,10 @@ async def report():
         non_popular_tokens = []
         top100 = await get_top100_tokens()
         stop_token = ['WETH']
+        period = await read_bot_settings('Etherscanio-parser_report_time')
+        period = int(period)
         all_transactions = await get_last_hour_transaction(
-            limit_count)  # [('WETH', 4027),]
+            limit_count, period)  # [('WETH', 4027),]
         for token in all_transactions:
             if token[0] not in top100 + stop_token:
                 non_popular_tokens.append(token)

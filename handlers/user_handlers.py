@@ -31,8 +31,8 @@ async def process_start_command(message: Message, state: FSMContext):
             f'/report: отчет.\n'
             f'/settings: показать текущие настройки\n\n'
             f'Изменить настройки:\n'
+            f'set:period:50 - изменить период обработки, мин.\n'
             f'set:limit:50 - изменить порог счетчика.\n'
-            f'set:period:50 - изменить период отчета, мин.\n'
             )
     await message.answer(text, reply_markup=start_kb)
 

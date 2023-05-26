@@ -82,7 +82,7 @@ async def main():
     Циклический парсинг новых транзакций и добавление в базу.
     :return: None
     """
-    asyncio.create_task(every_hour_report())
+    # asyncio.create_task(every_hour_report())
     asyncio.create_task(db_cleaner())
     parsing_transactions_headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/113.0',
