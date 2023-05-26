@@ -100,7 +100,7 @@ class Proxy:
 
 @dataclass
 class Logic:
-    pass
+    STOP_TOKEN: list
 
 
 @dataclass
@@ -129,7 +129,7 @@ def load_config(path: str | None) -> Config:
                               password=env('PROXY_PASSWORD'),
                               port=env('PROXY_PORT'),
                               ),
-                  logic=Logic(),
+                  logic=Logic(STOP_TOKEN=list(map(str, env.list('STOP_TOKEN')))),
                   )
 
 
@@ -144,3 +144,4 @@ config = load_config('myenv.env')
 # print('DB_USER:', config.db.db_user)
 # print('DB_PASSWORD:', config.db.db_password)
 # print(config.tg_bot.admin_ids)
+print(config.logic)

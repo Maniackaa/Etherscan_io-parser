@@ -8,7 +8,7 @@ from sqlalchemy import select, delete, func
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import async_sessionmaker, AsyncSession
 
-from config_data.config import LOGGING_CONFIG
+from config_data.config import LOGGING_CONFIG, config
 from database.db import Transaction, engine, BotSettings
 from services.func import get_top100_tokens, format_top_message
 
@@ -139,7 +139,7 @@ async def report():
             'Etherscanio-parser_lower_limit_count'))
         non_popular_tokens = []
         top100 = await get_top100_tokens()
-        stop_token = ['WETH']
+        stop_token = config.logic.STOP_TOKEN
         period = await read_bot_settings('Etherscanio-parser_report_time')
         period = int(period)
         all_transactions = await get_last_hour_transaction(
