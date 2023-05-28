@@ -69,12 +69,12 @@ async def get_last_hour_transaction(lower_target, time_period=60) -> list[(str, 
     async with async_session() as session:
         query = select(
             Transaction.token, func.count(
-                Transaction.token), func.max(Transaction.token_adress)).group_by(
-            Transaction.token).order_by(
+                Transaction.token), Transaction.token_adress).group_by(
+            Transaction.token_adress).order_by(
             func.count(Transaction.token).desc()).where(
             (Transaction.addet_time > datetime.datetime.now()
              - datetime.timedelta(minutes=time_period))).having(
-            func.count(Transaction.token) > lower_target)
+            func.count(Transaction.token_adress) > lower_target)
         result = await session.execute(query)
         result = result.all()
         return result
