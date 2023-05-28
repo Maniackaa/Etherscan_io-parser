@@ -8,6 +8,7 @@ import requests
 from bs4 import BeautifulSoup
 
 from config_data.config import config, LOGGING_CONFIG
+from database.db import Transaction
 
 logging.config.dictConfig(LOGGING_CONFIG)
 err_log = logging.getLogger('errors_logger')
@@ -88,7 +89,7 @@ def get_adress_from_html(html):
     token_adress = {}
     for token_a in tokens_a:
         try:
-            address = token_a.get('href','/token/unknown').split('/token/')[1]
+            address = token_a.get('href', '/token/unknown').split('/token/')[1]
             span = token_a.select('div > span ')
             if len(span) == 2:
                 token_name = span[1].text.strip('()')
@@ -102,3 +103,36 @@ def get_adress_from_html(html):
             err_log.debug(f'{token_a or token_adress}', exc_info=True)
             raise err
     return token_adress
+
+
+def find_transactions(html) -> list[Transaction]:
+    soup = BeautifulSoup(html, features='lxml')
+    tokens_rows = soup.find_all('tr')[1:]
+    transactions: list[Transaction] = []
+    for num, row in enumerate(tokens_rows, 1):
+        token_name = ''
+        token = ''
+        columns = row.select('td')
+        txn_hash = columns[1].text.strip()
+        token_column = columns[10]
+        a = token_column.select('a')[0]
+        adress = a.get('href').split('/token/')[1].strip()
+        spans_token_name = a.select('span')
+        for span in spans_token_name:
+            span_class = span.get('class')
+            if 'text-muted' in span_class:
+                token = span.text.strip('()')
+            elif 'hash-tag' in span_class:
+                token_name = span.text
+        # print(num, 'token_name:', token_name)
+        # print('token:', token)
+        # print('txn_hash:', txn_hash)
+        # print('adress:', adress)
+        # print()
+        new_transaction: Transaction = Transaction(
+            txn_hash=txn_hash, token_name=token_name, token=token,
+            token_adress=adress
+        )
+        transactions.append(new_transaction)
+    # print(transactions)
+    return transactions

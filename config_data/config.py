@@ -44,7 +44,7 @@ LOGGING_CONFIG = {
             'class': 'logging.handlers.RotatingFileHandler',
             'filename': f'{BASE_DIR / "logs" / "my"}.log',
             'backupCount': 1,
-            'maxBytes': 1 * 1024 * 1024,
+            'maxBytes': 10 * 1024 * 1024,
             'mode': 'a',
             'encoding': 'UTF-8',
             'formatter': 'default_formatter',
@@ -53,7 +53,7 @@ LOGGING_CONFIG = {
             'class': 'logging.handlers.RotatingFileHandler',
             'filename': f'{BASE_DIR / "logs" / "errors"}.log',
             'backupCount': 1,
-            'maxBytes': 1 * 1024 * 1024,
+            'maxBytes': 10 * 1024 * 1024,
             'mode': 'a',
             'encoding': 'UTF-8',
             'formatter': 'default_formatter',
@@ -61,12 +61,12 @@ LOGGING_CONFIG = {
     },
     'loggers': {
         'my_logger': {
-            'handlers': ['stream_handler', 'rotating_file_handler'],
+            'handlers': ['rotating_file_handler'],
             'level': 'INFO',
             'propagate': True
         },
         'errors_logger': {
-            'handlers': ['stream_handler', 'errors_file_handler'],
+            'handlers': ['errors_file_handler'],
             'level': 'DEBUG',
             'propagate': True
         },
