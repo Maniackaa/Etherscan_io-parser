@@ -1,5 +1,7 @@
 import asyncio
 import datetime
+
+
 import logging.config
 import re
 import time
@@ -14,23 +16,21 @@ from services.func import get_top100_tokens, format_top_message
 
 logging.config.dictConfig(LOGGING_CONFIG)
 logger = logging.getLogger('my_logger')
+
 err_log = logging.getLogger('errors_logger')
 
 
-async def add_new_transactions(data: list, token_adress: dict):
+async def add_new_transactions(transactions: list[Transaction]):
     """
     Добавляет новые транзакции в базу
     [['0xf976b8b51421e58bb4217de8b2f82d91790e404168043c4d4a1b5827bd53c7d9'
      'Wrapped Ethe... (WETH)'],]
     """
-    logger.debug(f'add_new_transactions data: {data}\ntoken_adress: {token_adress}')
+    # logger.debug(f'add_new_transactions data: {data}\ntoken_adress: {token_adress}')
     start = time.perf_counter()
     async_session = async_sessionmaker(engine, expire_on_commit=False)
     count = 0
-    for row in data:
-        tnx_hash = row[0]
-        token_name = row[1]
-        transaction = Transaction()
+    for transaction in transactions:
         async with async_session() as session:
             try:
                 # Ищем есть ли запись
@@ -38,28 +38,20 @@ async def add_new_transactions(data: list, token_adress: dict):
                     Transaction.addet_time > (
                             datetime.datetime.now() - datetime.timedelta(
                                 minutes=5)),
-                    Transaction.txn_hash == tnx_hash,
-                    Transaction.token_name == token_name
+                    Transaction.txn_hash == transaction.txn_hash,
+                    Transaction.token_name == transaction.token_name
                     ).order_by(Transaction.addet_time.desc()).limit(1))
                 result = result.scalars().one_or_none()
                 if result:
-                    logger.debug(f'Запись есть в базе: ')
+                    # logger.debug(f'Запись есть в базе: ')
                     continue
-                transaction.txn_hash = tnx_hash
-                transaction.token_name = token_name
-                token = re.search('\((.+)\)', token_name)
-                if token:
-                    token = token.group(1)
-                transaction.token = token or 'unknown'
                 transaction.addet_time = datetime.datetime.now()
-                transaction.token_adress = token_adress.get(
-                    transaction.token, 'unknown')
                 session.add(transaction)
                 await session.commit()
                 count += 1
-                logger.debug(f'Запись ДОБАВЛЕНА в базу')
+                logger.debug(f'добавлено в базу: {transaction}')
             except IntegrityError as err:
-                err_log.error(f'Проблема добавления записи {row}')
+                err_log.error(f'Проблема добавления записи {transactions}')
                 raise err
     logger.info(f'Добавлено: {count} {time.perf_counter() - start}')
 

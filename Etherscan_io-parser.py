@@ -12,10 +12,11 @@ from database.db_func import (
 )
 from services.func import (
     get_df_from_html,
-    get_adress_from_html, send_message_tg,
+    get_adress_from_html, send_message_tg, find_transactions,
 )
 
 logging.config.dictConfig(LOGGING_CONFIG)
+# logging.Formatter.converter = time.gmtime
 logger = logging.getLogger('my_logger')
 err_log = logging.getLogger('errors_logger')
 
@@ -111,10 +112,9 @@ async def main():
                 logger.debug(f'Время запроса: {time_point1 - time_point}')
                 # Получение транзакций
                 html = response.text
-                transactions_df = get_df_from_html(html)
-                adress = get_adress_from_html(html)
+                transactions_from_page = find_transactions(html)
                 # Добавление в базу
-                await add_new_transactions(transactions_df.values, adress)
+                await add_new_transactions(transactions_from_page)
                 time_point2 = time.perf_counter()
                 logger.debug(f'Время обработки: {time_point2 - time_point1}')
                 logger.debug(f'Общее время: {time_point2 - time_point}')
