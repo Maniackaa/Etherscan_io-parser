@@ -63,13 +63,12 @@ async def get_last_hour_transaction(lower_target, time_period=60) -> list[(str, 
     :param lower_target: нижний порог количества
     :param time_period: период  обработки, мин
     :return: list[tuple[str, int]]
-    [('WETH', 559, '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2'),]
+    [(Token, 559),]
     """
     async_session = async_sessionmaker(engine, expire_on_commit=False)
     async with async_session() as session:
         query = select(
-            Transaction.token, func.count(
-                Transaction.token), func.max(Transaction.token_adress)).group_by(
+            Transaction, func.count(Transaction.token_adress)).group_by(
             Transaction.token_adress).order_by(
             func.count(Transaction.token).desc()).where(
             (Transaction.addet_time > datetime.datetime.now()
@@ -77,6 +76,7 @@ async def get_last_hour_transaction(lower_target, time_period=60) -> list[(str, 
             func.count(Transaction.token_adress) > lower_target)
         result = await session.execute(query)
         result = result.all()
+        print('res:', result, len(result))
         return result
 
 
@@ -135,10 +135,10 @@ async def report():
         period = await read_bot_settings('Etherscanio-parser_report_time')
         period = int(period)
         all_transactions = await get_last_hour_transaction(
-            limit_count, period)  # [('WETH', 4027),]
-        for token in all_transactions:
-            if token[0] not in top100 + stop_token:
-                non_popular_tokens.append(token)
+            limit_count, period)  # [(Transaction, 4027),]
+        for transaction, count in all_transactions:
+            if transaction.token not in top100 + stop_token:
+                non_popular_tokens.append((transaction, count))
         print('non_popular_tokens:', non_popular_tokens)
         if non_popular_tokens:
             msg = format_top_message(non_popular_tokens)

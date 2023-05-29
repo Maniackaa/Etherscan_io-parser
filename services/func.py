@@ -62,10 +62,11 @@ async def get_top100_tokens():
     return top100
 
 
-def format_top_message(tokens: list[tuple]) -> str:
+def format_top_message(tokens: list[Transaction, int]) -> str:
     msg = f'Топ\n'
-    for token in tokens:
-        msg += f'{token[0]} ({token[1]})\n{token[2]}\n\n'
+    for transaction, count in tokens:
+        # msg += f'{token[0]} ({token[1]})\n{token[2]}\n\n'
+        msg += f'{transaction.token} ({count})\n{transaction.token_adress})\n\n'
     return msg
 
 
