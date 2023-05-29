@@ -11,8 +11,8 @@ from database.db_func import (
     read_bot_settings, report
 )
 from services.func import (
-    get_df_from_html,
-    get_adress_from_html, send_message_tg, find_transactions,
+
+ send_message_tg, find_transactions,
 )
 
 logging.config.dictConfig(LOGGING_CONFIG)
@@ -28,7 +28,7 @@ async def db_cleaner():
     """
     while True:
         logger.info('Очистка базы')
-        clean_result = await clean(70)
+        clean_result = await clean(110)
         if clean_result:
             logger.info('База почищена')
         else:
