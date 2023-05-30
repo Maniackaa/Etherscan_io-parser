@@ -62,11 +62,12 @@ async def get_top100_tokens():
     return top100
 
 
-def format_top_message(tokens: list[Transaction, int]) -> str:
+def format_top_message(tokens: list[Transaction, int, int]) -> str:
     msg = f'Топ\n'
-    for transaction, count in tokens:
+    for transaction, count, holders in tokens:
         # msg += f'{token[0]} ({token[1]})\n{token[2]}\n\n'
-        msg += f'{transaction.token} ({count})\n{transaction.token_adress})\n\n'
+        msg += (f'{transaction.token} ({count}). Holders: {holders}\n'
+                f'{transaction.token_adress}\n\n')
     return msg
 
 
@@ -125,11 +126,6 @@ def find_transactions(html) -> list[Transaction]:
                 token = span.text.strip('()')
             elif 'hash-tag' in span_class:
                 token_name = span.text
-        # print(num, 'token_name:', token_name)
-        # print('token:', token)
-        # print('txn_hash:', txn_hash)
-        # print('adress:', adress)
-        # print()
         new_transaction: Transaction = Transaction(
             txn_hash=txn_hash, token_name=token_name, token=token,
             token_adress=adress

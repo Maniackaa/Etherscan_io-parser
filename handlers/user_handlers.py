@@ -22,6 +22,7 @@ kb = [
 start_kb: ReplyKeyboardMarkup = ReplyKeyboardMarkup(keyboard=kb,
                                                     resize_keyboard=True)
 
+
 @router.message(Command(commands=["start"]))
 async def process_start_command(message: Message, state: FSMContext):
     print('start')
@@ -31,8 +32,9 @@ async def process_start_command(message: Message, state: FSMContext):
             f'/report: отчет.\n'
             f'/settings: показать текущие настройки\n\n'
             f'Изменить настройки:\n'
-            f'set:period:50 - изменить период обработки, мин.\n'
-            f'set:limit:50 - изменить порог счетчика.\n'
+            f'set:period:60 - изменить период обработки, мин.\n'
+            f'set:limit:100 - изменить порог счетчика.\n'
+            f'set:holders:3000 - изменить порог холдеров для отчета.\n'
             )
     await message.answer(text, reply_markup=start_kb)
 
@@ -40,6 +42,7 @@ async def process_start_command(message: Message, state: FSMContext):
 @router.message(Command(commands=["report"]))
 async def process_start_command(message: Message):
     print('report')
+    await message.answer('Запрос обрабатывается. Ждите!')
     text = f'Report\n'
     text += await report() or 'empty'
     print(text)
@@ -59,6 +62,10 @@ async def process_start_command(message: Message):
             await message.answer(f'{name}, {value}')
         elif name == 'period' and value:
             settings_name = 'Etherscanio-parser_report_time'
+            await set_botsettings_value(settings_name, value)
+            await message.answer(f'{name}, {value}')
+        elif name == 'holders' and value:
+            settings_name = 'holders_min_limit'
             await set_botsettings_value(settings_name, value)
             await message.answer(f'{name}, {value}')
         else:
