@@ -70,7 +70,7 @@ async def get_last_hour_transaction(lower_target, time_period=60) -> list[(str, 
         query = select(
             Transaction, func.count(Transaction.token_adress)).group_by(
             Transaction.token_adress).order_by(
-            func.count(Transaction.token).desc()).where(
+            func.count(Transaction.token_adress).desc()).where(
             (Transaction.addet_time > datetime.datetime.now()
              - datetime.timedelta(minutes=time_period))).having(
             func.count(Transaction.token_adress) > lower_target)
@@ -135,7 +135,7 @@ async def report():
         period = await read_bot_settings('Etherscanio-parser_report_time')
         period = int(period)
         all_transactions = await get_last_hour_transaction(
-            limit_count, period)  # [(Transaction, 4027),]
+            limit_count, period)  # [('WETH', '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2', 5944)]
         for transaction, count in all_transactions:
             if transaction.token not in top100 + stop_token:
                 non_popular_tokens.append((transaction, count))

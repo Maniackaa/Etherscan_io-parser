@@ -40,7 +40,8 @@ async def process_start_command(message: Message, state: FSMContext):
 @router.message(Command(commands=["report"]))
 async def process_start_command(message: Message):
     print('report')
-    text = await report()
+    text = f'Report\n'
+    text += await report() or 'empty'
     print(text)
     await message.answer(text[:2500])
 
