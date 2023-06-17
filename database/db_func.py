@@ -110,6 +110,16 @@ async def read_bot_settings(name: str) -> str:
     return readed_setting.value
 
 
+async def read_all_bot_settings():
+    async_session: async_sessionmaker[AsyncSession] = async_sessionmaker(
+        engine, expire_on_commit=False)
+    async with async_session() as session:
+        q = select(BotSettings)
+        result = await session.execute(q)
+        readed_setting: BotSettings = result.scalars().all()
+    print(readed_setting)
+    return readed_setting
+
 async def set_botsettings_value(name, value):
     try:
         async_session = async_sessionmaker(engine)

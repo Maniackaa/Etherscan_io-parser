@@ -8,7 +8,8 @@ from aiogram.fsm.context import FSMContext
 
 
 from config_data.config import LOGGING_CONFIG
-from database.db_func import set_botsettings_value, read_bot_settings
+from database.db_func import set_botsettings_value, read_bot_settings, \
+    read_all_bot_settings
 from services.func import report
 
 router: Router = Router()
@@ -39,6 +40,8 @@ async def process_start_command(message: Message, state: FSMContext):
             f'set:period:60 - изменить период обработки, мин.\n'
             f'set:limit:100 - изменить порог счетчика.\n'
             f'set:holders:3000 - изменить порог холдеров для отчета.\n'
+            f'set:HONEYPOT_DELAY:720 - Задержка перед проверкой  на is_honeypot, в минутах\n'
+            f'set:live_period:30 - Период за сколько мин. искать  транзакции для сравнения с базой uniswap\n'
             )
     await message.answer(text, reply_markup=start_kb)
 
@@ -75,18 +78,38 @@ async def process_start_command(message: Message):
             settings_name = 'holders_min_limit'
             await set_botsettings_value(settings_name, value)
             await message.answer(f'{name}, {value}')
+        elif name == 'HONEYPOT_DELAY' and value:
+            settings_name = 'HONEYPOT_DELAY'
+            await set_botsettings_value(settings_name, value)
+            await message.answer(f'{name}, {value}')
+        elif name == 'live_period' and value:
+            settings_name = 'live_period'
+            await set_botsettings_value(settings_name, value)
+            await message.answer(f'{name}, {value}')
         else:
             await message.answer(f'Неизвестная команда')
     except IndexError:
         await message.answer(f'Неверный формат команды')
 
 
+# @router.message(Command(commands=["settings"]))
+# async def process_settings_command(message: Message):
+#     print('setings')
+#     period = await read_bot_settings('Etherscanio-parser_report_time')
+#     limit = await read_bot_settings('Etherscanio-parser_lower_limit_count')
+#     text = (f'Текущие настройки:\n\n'
+#             f'Период отправки отчетов, мин: {period}\n'
+#             f'Нижний порог счетчика токенов для отчета: {limit}')
+#     await message.answer(text[:2500])
+
+
 @router.message(Command(commands=["settings"]))
 async def process_settings_command(message: Message):
+
     print('setings')
-    period = await read_bot_settings('Etherscanio-parser_report_time')
-    limit = await read_bot_settings('Etherscanio-parser_lower_limit_count')
-    text = (f'Текущие настройки:\n\n'
-            f'Период отправки отчетов, мин: {period}\n'
-            f'Нижний порог счетчика токенов для отчета: {limit}')
-    await message.answer(text[:2500])
+    settings = await read_all_bot_settings()
+    text = f'Текущие настройки:\n\n'
+    for setting in settings:
+        text += f'{setting.description}:\n{setting.name}: {setting.value}\n\n'
+        print(settings, setting.name)
+    await message.answer(text)

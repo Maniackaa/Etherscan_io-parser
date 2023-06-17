@@ -28,7 +28,7 @@ async def db_cleaner():
     """
     while True:
         logger.info('Очистка базы')
-        clean_result = await clean(110)
+        clean_result = await clean(70)
         if clean_result:
             logger.info('База почищена')
         else:

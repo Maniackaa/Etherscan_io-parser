@@ -11,6 +11,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from config_data.config import LOGGING_CONFIG, config
 from database.db import Transaction, Base, engine
+from database.db_func import read_bot_settings
 
 router: Router = Router()
 logging.config.dictConfig(LOGGING_CONFIG)
@@ -46,21 +47,21 @@ async def process_settings_command(message: Message):
     session = async_sessionmaker(engine_user, expire_on_commit=False)()
     tokens_res = await session.execute(select(Token.token).where(Token.message_sended == '1'))
     tokens = tokens_res.scalars().all()
-    print('tokens', len(tokens), tokens)
     await session.close()
 
     # последние транзакции uniswap_db.transactions за час + которые выше
+    live_period = await read_bot_settings('live_period')
+    live_period = int(live_period)
     async with engine_uniswap.begin() as conn:
         transactions_q = await conn.execute(
-            select(Transaction.token, Transaction.token_adress).where(Transaction.token_adress.in_(tokens)).group_by('token_adress'))
+            select(Transaction.token, Transaction.token_adress).where(Transaction.token_adress.in_(tokens)).where(
+             (Transaction.addet_time > datetime.datetime.now()
+              - datetime.timedelta(minutes=live_period))).group_by('token_adress'))
         transactions = transactions_q.all()
-        print(transactions)
-
-
 
     msg = 'Живые токены из uniswap:\n'
     for transactions in transactions:
-        msg += f'{transactions[0]} {transactions[1]}\n'
+        msg += f'({transactions[0]}) {transactions[1]}\n'
     #
     if len(msg) > 2500:
         for x in range(0, len(msg), 4096):
