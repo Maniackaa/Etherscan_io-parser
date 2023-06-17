@@ -1,3 +1,4 @@
+import asyncio
 from aiogram import Dispatcher, types, Router, Bot
 from aiogram.filters import Command, CommandStart, Text
 from aiogram.types import CallbackQuery, Message, URLInputFile, KeyboardButton, \
@@ -5,9 +6,10 @@ from aiogram.types import CallbackQuery, Message, URLInputFile, KeyboardButton, 
 import logging.config
 from aiogram.fsm.context import FSMContext
 
+
 from config_data.config import LOGGING_CONFIG
-from database.db_func import set_botsettings_value, get_last_hour_transaction, \
-    report, read_bot_settings
+from database.db_func import set_botsettings_value, read_bot_settings
+from services.func import report
 
 router: Router = Router()
 logging.config.dictConfig(LOGGING_CONFIG)
@@ -46,7 +48,10 @@ async def process_start_command(message: Message):
     text = f'Report\n'
     text += await report() or 'empty'
     print(text)
-    await message.answer(text[:2500])
+    for x in range(0, len(text), 2500):
+        mess = text[x: x + 2500]
+        await asyncio.sleep(0.1)
+        await message.answer(mess)
 
 
 @router.message(Text(startswith='set:'))

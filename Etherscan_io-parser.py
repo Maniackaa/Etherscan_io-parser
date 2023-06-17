@@ -8,7 +8,7 @@ from config_data.config import LOGGING_CONFIG, config
 from database.db_func import (
     add_new_transactions,
     clean,
-    read_bot_settings, report
+    read_bot_settings
 )
 from services.func import (
 

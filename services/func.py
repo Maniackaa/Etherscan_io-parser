@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import re
 import time
@@ -9,6 +10,7 @@ from bs4 import BeautifulSoup
 
 from config_data.config import config, LOGGING_CONFIG
 from database.db import Transaction
+from database.db_func import read_bot_settings, get_last_hour_transaction
 
 logging.config.dictConfig(LOGGING_CONFIG)
 err_log = logging.getLogger('errors_logger')
@@ -133,3 +135,80 @@ def find_transactions(html) -> list[Transaction]:
         transactions.append(new_transaction)
     # print(transactions)
     return transactions
+
+
+async def find_holders(token_adress: str) -> int:
+    """"
+    Находит количество Holders по адресу токена
+    """
+    try:
+        headers = {
+            'authority': 'etherscan.io',
+            'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',  # noqa: E501
+            'accept-language': 'ru,en;q=0.9',
+            'cache-control': 'max-age=0',
+            'sec-ch-ua': '"Chromium";v="110", "Not A(Brand";v="24", "YaBrowser";v="23"',  # noqa: E501
+            'sec-ch-ua-mobile': '?0',
+            'sec-ch-ua-platform': '"Windows"',
+            'sec-fetch-dest': 'document',
+            'sec-fetch-mode': 'navigate',
+            'sec-fetch-site': 'none',
+            'sec-fetch-user': '?1',
+            'upgrade-insecure-requests': '1',
+            'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 YaBrowser/23.3.4.603 Yowser/2.5 Safari/537.36',   # noqa: E501
+        }
+        url = f'https://etherscan.io/token/{token_adress}'
+
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url,headers=headers) as response:
+                html = await response.text()
+
+        soup = BeautifulSoup(html, features='lxml')
+        holders_div = soup.find(id='ContentPlaceHolder1_tr_tokenHolders')
+        holders_text = holders_div.find('div').text
+        holders_value = holders_text.strip().replace(',', '').split(' ')[0]
+        return int(holders_value)
+    except Exception:
+        err_log.error(f'Проблема распознавания Holders {token_adress}')
+        pass
+
+
+async def report():
+    try:
+        limit_count = int(await read_bot_settings(
+            'Etherscanio-parser_lower_limit_count'))
+        non_popular_tokens = []
+        top100 = await get_top100_tokens()
+        stop_token = config.logic.STOP_TOKEN
+        period = await read_bot_settings('Etherscanio-parser_report_time')
+        period = int(period)
+        print('period', period)
+        holders_limit = await read_bot_settings('holders_min_limit')
+        holders_limit = int(holders_limit)
+        print('holders_limit', holders_limit)
+        all_transactions = await get_last_hour_transaction(
+            limit_count, period)  # [(Transaction, 5944)]
+        print(all_transactions)
+        for transaction, count in all_transactions:
+            if transaction.token not in top100 + stop_token:
+                holders = await find_holders(transaction.token_adress)
+                print(f'Holders {transaction.token}: {holders}')
+                if holders > holders_limit:
+                    non_popular_tokens.append((transaction, count, holders))
+        print('non_popular_tokens:', non_popular_tokens)
+        if non_popular_tokens:
+            msg = format_top_message(non_popular_tokens)
+        else:
+            msg = 'Empty'
+        return msg
+    except Exception:
+        err_log.error('report error', exc_info=True)
+
+
+async def main():
+    pass
+
+
+
+if __name__ == '__main__':
+    asyncio.run(main())

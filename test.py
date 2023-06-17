@@ -1,54 +1,79 @@
-import time
-
-import requests
-from bs4 import BeautifulSoup
-
-parsing_transactions_headers = {
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/113.0',
-    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
-    'Accept-Language': 'ru-RU,ru;q=0.8,en-US;q=0.5,en;q=0.3',
-    'Referer': 'https://etherscan.io/tokentxns?ps=100&p=2',
-    'Connection': 'keep-alive',
-    'Upgrade-Insecure-Requests': '1',
-    'Sec-Fetch-Dest': 'document',
-    'Sec-Fetch-Mode': 'navigate',
-    'Sec-Fetch-Site': 'same-origin',
-
-}
-params = {
-    'ps': '100',
-    'p': '1',
-}
-
-time_point = time.perf_counter()
-response = requests.get('https://etherscan.io/tokentxns',
-                        params=params,
-                        headers=parsing_transactions_headers)
-
-html = response.text
+import asyncio
+import datetime
+import sys
 
 
-soup = BeautifulSoup(html, features='lxml')
-tokens_a = soup.find_all('a',
-                         class_='d-flex align-items-center gap-1 link-dark')
-token_adress = {}
-token_adress_set = []
-for token_a in tokens_a:
-    address = token_a.get('href', '/token/unknown').split('/token/')[1]
-    span = token_a.select('div > span ')
-    if len(span) == 2:
-        token_name = span[1].text.strip('()')
-    else:
-        token_name = span[0].text
-    print(token_name, address)
-    token_adress[token_name] = address
-    token_adress_set.append((token_name, address))
+from sqlalchemy import create_engine, ForeignKey, Date, String, \
+    UniqueConstraint, Float, DateTime, func, select, Integer
+from sqlalchemy.orm import DeclarativeBase, relationship
+from sqlalchemy.orm import Mapped
+from sqlalchemy.orm import mapped_column
+from sqlalchemy.ext.asyncio import create_async_engine
 
-token_adress_set = set(token_adress_set)
+from config_data.config import config
+from database.db import Transaction, Base
+
+engine = create_async_engine(f"mysql+asyncmy://{config.db.db_user}:{config.db.db_password}@{config.db.db_host}:{config.db.db_port}/uniswap_db", echo=False)
+engine_userbot = create_async_engine(f"mysql+asyncmy://{config.db.db_user}:{config.db.db_password}@{config.db.db_host}:{config.db.db_port}/userbot_db", echo=False)
+
+from sqlalchemy.ext.asyncio import async_sessionmaker, AsyncSession
 
 
-for t in sorted(token_adress_set):
-    print(t)
+class Token(Base):
+    __tablename__ = 'tokens'
+    id: Mapped[int] = mapped_column(primary_key=True,
+                                    autoincrement=True,
+                                    comment='Первичный ключ')
+    date: Mapped[str] = mapped_column(String(30), default=str(datetime.datetime.utcnow()))
+    token: Mapped[str] = mapped_column(String(255))
+    token_url: Mapped[str] = mapped_column(String(500))
+    weth: Mapped[int] = mapped_column(String(255))
+    score: Mapped[str] = mapped_column(String(500), nullable=True, default='')
+    is_honeypot: Mapped[str] = mapped_column(String(255), nullable=True, default='')
+    holders: Mapped[int] = mapped_column(Integer(), nullable=True)
+    message_sended: Mapped[str] = mapped_column(String(30), default='')
 
-print(len(token_adress), token_adress)
-print(len(token_adress_set), token_adress_set)
+    def __repr__(self):
+        return f'{self.id}. {self.token}'
+
+
+async def get_last_hour_transaction(
+        lower_target, time_period=60) -> list[Transaction, int]:
+    """
+    Возвращает сгруппированный список транзакций за последний час,
+     количество которых больше порога.
+    :param lower_target: нижний порог количества
+    :param time_period: период  обработки, мин
+    :return: list[tuple[str, int]]
+    [(Transaction, 559),]
+    """
+    async_session = async_sessionmaker(engine, expire_on_commit=False)
+    async with async_session() as session:
+        query = select(
+            Transaction, func.count(Transaction.token_adress)).group_by(
+            Transaction.token_adress).order_by(
+            func.count(Transaction.token_adress).desc()).where(
+            (Transaction.addet_time > datetime.datetime.now()
+             - datetime.timedelta(minutes=time_period))).having(
+            func.count(Transaction.token_adress) > lower_target)
+        result = await session.execute(query)
+        result = result.all()
+        print('res:', result, len(result))
+        async_session = async_sessionmaker(engine_userbot, expire_on_commit=False)
+        async with async_session() as session:
+            query = select(Token)
+            res2 = await session.execute(query)
+            print('res2', res2.scalars().all())
+
+        return result
+
+
+
+
+async def main():
+    x = await get_last_hour_transaction(1, 2)
+    print(x)
+
+
+if __name__ == '__main__':
+    asyncio.run(main())

@@ -30,18 +30,19 @@ class Transaction(Base):
     addet_time: Mapped[str] = mapped_column(DateTime(), default=str(
         datetime.datetime.now()))
 
+
     def __repr__(self):
         return f'{self.id} {self.token_name} {self.token} {self.token_adress} {self.addet_time}'
 
-
-class Report(Base):
-    __tablename__ = 'reports'
-    id: Mapped[int] = mapped_column(primary_key=True,
-                                    autoincrement=True,
-                                    comment='Первичный ключ')
-    addet_time: Mapped[str] = mapped_column(DateTime(), default=str(
-        datetime.datetime.now()))
-    text: Mapped[str] = mapped_column(String(5000))
+#
+# class Report(Base):
+#     __tablename__ = 'reports'
+#     id: Mapped[int] = mapped_column(primary_key=True,
+#                                     autoincrement=True,
+#                                     comment='Первичный ключ')
+#     addet_time: Mapped[str] = mapped_column(DateTime(), default=str(
+#         datetime.datetime.now()))
+#     text: Mapped[str] = mapped_column(String(5000))
 
 
 class BotSettings(Base):
