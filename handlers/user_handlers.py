@@ -31,7 +31,8 @@ async def process_start_command(message: Message, state: FSMContext):
     await state.clear()
     text = (f'Привет!\n'
             f'Команды:\n'
-            f'/report: отчет.\n'
+            f'/report -  отчет.\n'
+            f'/live - показать дивые токены из uniswap;'
             f'/settings: показать текущие настройки\n\n'
             f'Изменить настройки:\n'
             f'set:period:60 - изменить период обработки, мин.\n'
