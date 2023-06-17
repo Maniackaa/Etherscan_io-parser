@@ -57,8 +57,13 @@ async def process_settings_command(message: Message):
     msg = 'Живые токены из uniswap:\n'
     for token in tokens:
         msg += f'{token.token}\n'
-    await message.answer(msg[:2500])
-    print(len(msg))
+
+    if len(msg) > 2500:
+        for x in range(0, len(msg), 4096):
+            await message.answer(msg[x:x + 4096])
+    else:
+        await message.answer(msg)
+
 
 
 

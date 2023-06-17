@@ -19,6 +19,7 @@ err_log = logging.getLogger('errors_logger')
 
 kb = [
     [KeyboardButton(text="/report")],
+    [KeyboardButton(text="/live")],
     ]
 
 start_kb: ReplyKeyboardMarkup = ReplyKeyboardMarkup(keyboard=kb,
@@ -32,7 +33,7 @@ async def process_start_command(message: Message, state: FSMContext):
     text = (f'Привет!\n'
             f'Команды:\n'
             f'/report -  отчет.\n'
-            f'/live - показать дивые токены из uniswap;'
+            f'/live - показать живые токены из uniswap.\n'
             f'/settings: показать текущие настройки\n\n'
             f'Изменить настройки:\n'
             f'set:period:60 - изменить период обработки, мин.\n'
