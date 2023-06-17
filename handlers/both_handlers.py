@@ -42,22 +42,26 @@ class Token(Base):
 
 @router.message(Command(commands=["live"]))
 async def process_settings_command(message: Message):
-    # последние транзакции uniswap_db.transactions за час
+    # Все токены UserbotEtherscan которые старые
+    session = async_sessionmaker(engine_user, expire_on_commit=False)()
+    tokens_res = await session.execute(select(Token.token).where(Token.message_sended == '1'))
+    tokens = tokens_res.scalars().all()
+    print('tokens', len(tokens), tokens)
+    await session.close()
+
+    # последние транзакции uniswap_db.transactions за час + которые выше
     async with engine_uniswap.begin() as conn:
         transactions_q = await conn.execute(
-            select(Transaction.token_adress).group_by(
-                'token_adress').having(func.count(Transaction.token_adress) > 1))
-        transactions = transactions_q.scalars().all()
+            select(Transaction.token, Transaction.token_adress).where(Transaction.token_adress.in_(tokens)).group_by('token_adress'))
+        transactions = transactions_q.all()
+        print(transactions)
 
-    session = async_sessionmaker(engine_user, expire_on_commit=False)
-    tokens_res = await session().execute(select(Token).where(
-        Token.token.in_(transactions))
-    )
-    tokens = tokens_res.scalars().all()
+
+
     msg = 'Живые токены из uniswap:\n'
-    for token in tokens:
-        msg += f'{token.token}\n'
-
+    for transactions in transactions:
+        msg += f'{transactions[0]} {transactions[1]}\n'
+    #
     if len(msg) > 2500:
         for x in range(0, len(msg), 4096):
             await message.answer(msg[x:x + 4096])
