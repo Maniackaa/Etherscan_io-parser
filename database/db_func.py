@@ -5,18 +5,21 @@ import datetime
 import logging.config
 import time
 
-from sqlalchemy import select, delete, func
+from sqlalchemy import select, delete, func, String, Integer, DateTime
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.ext.asyncio import async_sessionmaker, AsyncSession
+from sqlalchemy.ext.asyncio import async_sessionmaker, AsyncSession, \
+    create_async_engine
+from sqlalchemy.orm import mapped_column, Mapped
 
 from config_data.config import LOGGING_CONFIG, config
-from database.db import Transaction, engine, BotSettings
-
+from database.db import Transaction, engine, BotSettings, Base
 
 logging.config.dictConfig(LOGGING_CONFIG)
 logger = logging.getLogger('my_logger')
 
 err_log = logging.getLogger('errors_logger')
+
+engine_user = create_async_engine(f"mysql+asyncmy://{config.db.db_user}:{config.db.db_password}@{config.db.db_host}:{config.db.db_port}/userbot_db", echo=False)
 
 
 async def add_new_transactions(transactions: list[Transaction]):
@@ -120,6 +123,7 @@ async def read_all_bot_settings():
     print(readed_setting)
     return readed_setting
 
+
 async def set_botsettings_value(name, value):
     try:
         async_session = async_sessionmaker(engine)
@@ -135,9 +139,13 @@ async def set_botsettings_value(name, value):
         raise err
 
 
-async def main():
-    await get_last_hour_transaction(1, 2)
 
+
+
+async def main():
+    # await get_last_hour_transaction(1, 2)
+    pass
 
 if __name__ == '__main__':
     asyncio.run(main())
+

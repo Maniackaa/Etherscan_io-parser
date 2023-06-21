@@ -3,7 +3,7 @@ import datetime
 import sys
 
 from sqlalchemy import create_engine, ForeignKey, Date, String, \
-    UniqueConstraint, Float, DateTime, Integer
+    UniqueConstraint, Float, DateTime
 from sqlalchemy.orm import DeclarativeBase, relationship
 from sqlalchemy.orm import Mapped
 from sqlalchemy.orm import mapped_column
@@ -20,7 +20,6 @@ class Base(DeclarativeBase):
 
 class Transaction(Base):
     __tablename__ = 'transactions'
-    used_transacrions = set()
     id: Mapped[int] = mapped_column(primary_key=True,
                                     autoincrement=True,
                                     comment='Первичный ключ')
@@ -31,33 +30,9 @@ class Transaction(Base):
     addet_time: Mapped[str] = mapped_column(DateTime(), default=str(
         datetime.datetime.now()))
 
-    @classmethod
-    def used_transactions(cls):
-        return cls.used_transacrions
-
-    @classmethod
-    def add_trasaction(cls, adress):
-        cls.used_transacrions.add(adress)
-
-    @classmethod
-    def clear_transaction(cls):
-        cls.used_transacrions = set()
-
-    def __str__(self):
-        return f'{self.id} {self.token_name} {self.token} {self.token_adress} {self.addet_time}'
 
     def __repr__(self):
-        return f'{self.id} token_name: {self.token_name}, token: {self.token}, token_adress: {self.token_adress}, {self.addet_time}'
-
-#
-# class Report(Base):
-#     __tablename__ = 'reports'
-#     id: Mapped[int] = mapped_column(primary_key=True,
-#                                     autoincrement=True,
-#                                     comment='Первичный ключ')
-#     addet_time: Mapped[str] = mapped_column(DateTime(), default=str(
-#         datetime.datetime.now()))
-#     text: Mapped[str] = mapped_column(String(5000))
+        return f'{self.id} {self.token_name} {self.token} {self.token_adress} {self.addet_time}'
 
 
 class BotSettings(Base):
@@ -74,9 +49,9 @@ class BotSettings(Base):
     def __repr__(self):
         return f'{self.id}. {self.name}: {self.value}'
 
+
 async def init_models(engine):
     async with engine.begin() as conn:
-        # await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)
     await engine.dispose()
 

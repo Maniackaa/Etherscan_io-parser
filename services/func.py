@@ -67,9 +67,14 @@ async def get_top100_tokens():
 def format_top_message(tokens: list[Transaction, int, int]) -> str:
     msg = f'Топ\n'
     for transaction, count, holders in tokens:
-        # msg += f'{token[0]} ({token[1]})\n{token[2]}\n\n'
-        msg += (f'{transaction.token} ({count}). Holders: {holders}\n'
-                f'{transaction.token_adress}\n\n')
+        print('---used_transactions:', len(transaction.used_transactions()), transaction.used_transactions())
+        if transaction.token_adress in transaction.used_transactions():
+            msg += (f'❌{transaction.token} ({count}). Holders: {holders}\n'
+                    f'{transaction.token_adress}\n\n')
+        else:
+            msg += (f'✅{transaction.token} ({count}). Holders: {holders}\n'
+                    f'{transaction.token_adress}\n\n')
+        transaction.add_trasaction(transaction.token_adress)
     return msg
 
 
@@ -194,19 +199,26 @@ async def report():
                 holders = await find_holders(transaction.token_adress)
                 print(f'Holders {transaction.token}: {holders}')
                 if holders > holders_limit:
+
                     non_popular_tokens.append((transaction, count, holders))
         print('non_popular_tokens:', non_popular_tokens)
         if non_popular_tokens:
             msg = format_top_message(non_popular_tokens)
         else:
             msg = 'Empty'
+
+        # for row in non_popular_tokens:
+        #     transaction: Transaction = row[0]
+        #     transaction.add_trasaction(transaction.token_adress)
+        #     print('---', transaction.token_adress)
+
         return msg
     except Exception:
         err_log.error('report error', exc_info=True)
 
 
 async def main():
-    pass
+    await report()
 
 
 

@@ -5,7 +5,7 @@ from aiogram.filters import Command, CommandStart, Text
 from aiogram.types import CallbackQuery, Message
 import logging.config
 
-from sqlalchemy import select, String, Integer, func
+from sqlalchemy import select, String, Integer, func, DateTime, update
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -36,14 +36,64 @@ class Token(Base):
     is_honeypot: Mapped[str] = mapped_column(String(255), nullable=True, default='')
     holders: Mapped[int] = mapped_column(Integer(), nullable=True)
     message_sended: Mapped[str] = mapped_column(String(30), default='')
+    last_call: Mapped[str] = mapped_column(DateTime())
 
     def __repr__(self):
         return f'{self.id}. {self.token}'
 
 
+async def change_token_last_call(token_adress):
+    """
+     Проверяет время когда токен попадал в /live.
+     Если уже попадал, то возвращает False
+     Если null, то ставит текущее время.
+    :param token:
+    :return:
+    """
+    try:
+        logger.debug(f'Смотрим last_call токена {token_adress} в базе userbot_db')
+        async_session = async_sessionmaker(engine_user)
+        async with async_session(expire_on_commit=False) as session:
+            query = select(Token).where(Token.token == token_adress)
+            token_q = await session.execute(query)
+            token = token_q.scalar()
+            if token.last_call is None:
+                token.last_call = datetime.datetime.utcnow()
+                session.add(token)
+                await session.commit()
+                logger.debug(f'Сохранили last_call: {token}. ТОкен помечен: {token.last_call}')
+                return True
+            else:
+                logger.debug(f'Ужк помечен')
+                return False
+
+    except Exception as err:
+        raise err
+
+
+async def clear_call():
+    try:
+        logger.debug(f'Очищаем /last_call')
+        async_session = async_sessionmaker(engine_user)
+        async with async_session(expire_on_commit=False) as session:
+            query = update(Token).where(Token.last_call.is_not(None)).values(last_call=None)
+            token_q = await session.execute(query)
+            print(token_q)
+            await session.commit()
+    except Exception:
+        logger.error('Ошибка обнуления last_cal')
+
+
+@router.message(Command(commands=["cl"]))
+async def process_settings_command(message: Message):
+    # Все годные токены UserbotEtherscan которые старые
+    await clear_call()
+    await message.answer('Обнулены')
+
+
 @router.message(Command(commands=["live"]))
 async def process_settings_command(message: Message):
-    # Все токены UserbotEtherscan которые старые
+    # Все годные токены UserbotEtherscan которые старые
     session = async_sessionmaker(engine_user, expire_on_commit=False)()
     tokens_res = await session.execute(select(Token.token).where(Token.message_sended == '1'))
     tokens = tokens_res.scalars().all()
@@ -60,8 +110,10 @@ async def process_settings_command(message: Message):
         transactions = transactions_q.all()
 
     msg = 'Живые токены из uniswap:\n'
-    for transactions in transactions:
-        msg += f'({transactions[0]}) {transactions[1]}\n'
+    for transaction in transactions:
+        token = transaction[1]
+        first = await change_token_last_call(token)
+        msg += f'✅({transaction[0]}) {transaction[1]}\n' if first else f'❌({transaction[0]}) {transaction[1]}\n'
     #
     if len(msg) > 2500:
         for x in range(0, len(msg), 4096):

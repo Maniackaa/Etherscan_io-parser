@@ -8,6 +8,7 @@ from aiogram.fsm.context import FSMContext
 
 
 from config_data.config import LOGGING_CONFIG
+from database.db import Transaction
 from database.db_func import set_botsettings_value, read_bot_settings, \
     read_all_bot_settings
 from services.func import report
@@ -35,6 +36,8 @@ async def process_start_command(message: Message, state: FSMContext):
             f'Команды:\n'
             f'/report -  отчет.\n'
             f'/live - показать живые токены из uniswap.\n'
+            f'/cl - очистить живые токены\n'
+            f'/cr - очистить живость репорта\n'
             f'/settings: показать текущие настройки\n\n'
             f'Изменить настройки:\n'
             f'set:period:60 - изменить период обработки, мин.\n'
@@ -57,6 +60,12 @@ async def process_start_command(message: Message):
         mess = text[x: x + 2500]
         await asyncio.sleep(0.1)
         await message.answer(mess)
+
+
+@router.message(Command(commands=["cr"]))
+async def process_start_command(message: Message):
+    Transaction.clear_transaction()
+    await message.answer('Репорт очищен')
 
 
 @router.message(Text(startswith='set:'))
